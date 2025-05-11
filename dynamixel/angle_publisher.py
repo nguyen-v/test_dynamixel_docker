@@ -11,7 +11,8 @@ class DynamixelAnglePublisher(Node):
         super().__init__('dynamixel_angle_publisher')
         
         # Dynamixel configuration
-        self.DEVICE_NAME = "/dev/sensors/dynamixel"
+        # self.DEVICE_NAME = "/dev/sensors/dynamixel"
+        self.DEVICE_NAME = "/dev/ttyACM0"
         self.BAUDRATE = 1000000
         self.DXL_ID = 1
         self.PROTOCOL_VERSION = 2.0
