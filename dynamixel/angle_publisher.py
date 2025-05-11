@@ -6,13 +6,12 @@ from std_msgs.msg import Float64
 import math
 from dynamixel_sdk import PortHandler, PacketHandler
 
-class DynamixelAnglePublisher(Node):
+class DynamixelAngleSubscriber(Node):
     def __init__(self):
-        super().__init__('dynamixel_angle_publisher')
+        super().__init__('dynamixel_angle_subscriber')
         
         # Dynamixel configuration
-        # self.DEVICE_NAME = "/dev/sensors/dynamixel"
-        self.DEVICE_NAME = "/dev/ttyACM0"
+        self.DEVICE_NAME = "/dev/sensors/dynamixel"  # Using the symlink from docker_run.sh
         self.BAUDRATE = 1000000
         self.DXL_ID = 1
         self.PROTOCOL_VERSION = 2.0
@@ -48,26 +47,19 @@ class DynamixelAnglePublisher(Node):
             self.TORQUE_ENABLE
         )
         
-        # Create publisher for the angle topic
-        self.publisher = self.create_publisher(Float64, '/dynamixel/angle', 10)
+        # Create subscriber for the angle topic
+        self.subscription = self.create_subscription(
+            Float64,
+            '/dynamixel/angle',
+            self.angle_callback,
+            10)
         
-        # Create a timer to publish angles every 0.1 seconds
-        self.timer = self.create_timer(0.1, self.timer_callback)
-        
-        # Initialize angle (in radians)
-        self.angle = 0.0
-        
-        self.get_logger().info('Dynamixel Angle Publisher Node has been started')
+        self.get_logger().info('Dynamixel Angle Subscriber Node has been started')
     
-    def timer_callback(self):
-        msg = Float64()
-        msg.data = self.angle
-        self.publisher.publish(msg)
-        self.get_logger().info(f'Publishing angle: {math.degrees(self.angle):.2f} degrees')
-    
-    def set_angle(self, angle_degrees):
-        """Set the angle in degrees"""
-        self.angle = math.radians(angle_degrees)
+    def angle_callback(self, msg):
+        """Callback function for received angle messages"""
+        angle_degrees = msg.data
+        self.get_logger().info(f'Received angle: {angle_degrees:.2f} degrees')
         
         # Convert angle to Dynamixel position (0-4095)
         position = int((angle_degrees / 360.0) * self.POSITION_RANGE)
@@ -89,11 +81,9 @@ class DynamixelAnglePublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
     
-    node = DynamixelAnglePublisher()
+    node = DynamixelAngleSubscriber()
     
     try:
-        # Example: Set angle to 45 degrees
-        node.set_angle(45.0)
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
